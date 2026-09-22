@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Browse — StudyShare{% endblock %}
+
+{% block extra_head %}
+<style>
+  .browse-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .browse-toolbar input[type="text"] {
+    flex: 1;
+    min-width: 200px;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.55rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-family: inherit;
+  }
+  .browse-toolbar input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .browse-toolbar input::placeholder { color: var(--text-muted); }
+
+  .browse-toolbar select {
+    padding: 0.55rem 0.7rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 0.8125rem;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 130px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237a8194' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.65rem center;
+  }
+  .browse-toolbar select:focus { border-color: var(--accent); }
+  .browse-toolbar select option { background: var(--surface); color: var(--text); }
+  .browse-toolbar select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-filter {
+    padding: 0.55rem 1.1rem;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 5px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-filter:hover { background: var(--accent-hover); }
+
+  .clear-filters {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .clear-filters:hover { color: var(--accent); }
+
+  .result-count {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem; }
+  .card p { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.55; margin-bottom: 1rem; flex: 1; }
+  .tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .tag { padding: 0.2rem 0.55rem; background: var(--tag-bg); border-radius: 3px; font-size: 0.7rem; color: var(--text-muted); }
+  .btn-download {
+    align-self: flex-start;
+    padding: 0.4rem 0.9rem;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 0.775rem;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .btn-download:hover { border-color: var(--accent); color: var(--text); }
+  .card-link-overlay { position: absolute; inset: 0; border-radius: 8px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3.5rem 1rem;
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.92rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="GET" action="{% url 'browse' %}" class="browse-toolbar">
+  <input type="text" name="search" placeholder="Search resources..." value="{{ request.GET.search }}">
+
+  <select name="faculty" id="faculty-select">
+    <option value="" {% if not request.GET.faculty %}selected{% endif %}>All Faculties</option>
+    {% for value, label in faculty_choices %}
+    <option value="{{ value }}" {% if request.GET.faculty == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+
+  <select name="department" id="department-select">
+    <option value="">All Departments</option>
+  </select>
+
+  <select name="level" id="level-select">
+    <option value="">All Levels</option>
+  </select>
+
+  <button type="submit" class="btn-filter">Filter</button>
+  {% if request.GET.search or request.GET.faculty or request.GET.department or request.GET.level %}
+  <a href="{% url 'browse' %}" class="clear-filters">Clear filters</a>
+  {% endif %}
+</form>
+
+<p class="result-count">{{ resources|length }} resource{{ resources|length|pluralize }} found</p>
+
+{% if resources %}
+<div class="card-grid">
+  {% for resource in resources %}
+  <div class="card">
+    <a href="{% url 'resource_details' resource.id %}" class="card-link-overlay"></a>
+    <h3>{{ resource.title }}</h3>
+    <p>{{ resource.description }}</p>
+    <div class="tags">
+      <span class="tag">{{ resource.get_resource_type_display }}</span>
+      <span class="tag">{{ resource.get_department_display }}</span>
+      <span class="tag">{{ resource.level }} Level</span>
+      <span class="tag">by {{ resource.uploaded_by.username }}</span>
+      <span class="tag">{{ resource.uploaded_at|date:"M d, Y" }}</span>
+    </div>
+    {% if resource.video_file %}
+    <a href="{{ resource.video_file.url }}" target="_blank" rel="noopener noreferrer" class="btn-download">View</a>
+    {% elif resource.raw_file %}
+    <a href="{{ resource.raw_file.url }}" target="_blank" rel="noopener noreferrer" class="btn-download">Download</a>
+    {% elif resource.image_file %}
+    <a href="{{ resource.image_file.url }}" target="_blank" rel="noopener noreferrer" class="btn-download">Download</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">No resources match your filters.</div>
+{% endif %}
+
+<script>
+(function () {
+  const FACULTY_DEPARTMENT_MAP = {
+    'computing': ['computer_science', 'software_engineering'],
+    'engineering': ['mechanical_engineering', 'electrical_engineering'],
+    'arts': ['english', 'music']
+  };
+
+  const DEPARTMENT_LABELS = {
+    'computer_science': 'Computer Science',
+    'software_engineering': 'Software Engineering',
+    'mechanical_engineering': 'Mechanical Engineering',
+    'electrical_engineering': 'Electrical Engineering',
+    'english': 'English',
+    'music': 'Music'
+  };
+
+  const DEPARTMENT_LEVEL_MAP = {
+    'computer_science': ['100', '200', '300', '400'],
+    'software_engineering': ['100', '200', '300', '400'],
+    'mechanical_engineering': ['100', '200', '300', '400', '500'],
+    'electrical_engineering': ['100', '200', '300', '400', '500'],
+    'english': ['100', '200', '300', '400'],
+    'music': ['100', '200', '300', '400']
+  };
+
+  // Values already applied via the URL query string, so we can restore them on load.
+  const selectedFaculty = '{{ request.GET.faculty|default:"" }}';
+  const selectedDepartment = '{{ request.GET.department|default:"" }}';
+  const selectedLevel = '{{ request.GET.level|default:"" }}';
+
+  const facultySelect = document.getElementById('faculty-select');
+  const departmentSelect = document.getElementById('department-select');
+  const levelSelect = document.getElementById('level-select');
+
+  function departmentsForFaculty(faculty) {
+    if (faculty && FACULTY_DEPARTMENT_MAP[faculty]) {
+      return FACULTY_DEPARTMENT_MAP[faculty];
+    }
+    // No faculty chosen yet: offer every department across every faculty.
+    return Object.values(FACULTY_DEPARTMENT_MAP).flat();
+  }
+
+  function levelsForDepartments(departments) {
+    const levels = new Set();
+    departments.forEach(dept => {
+      (DEPARTMENT_LEVEL_MAP[dept] || []).forEach(l => levels.add(l));
+    });
+    return Array.from(levels).sort((a, b) => a - b);
+  }
+
+  function populateDepartments(faculty, preselect) {
+    const depts = departmentsForFaculty(faculty);
+    departmentSelect.innerHTML = '<option value="">All Departments</option>';
+    depts.forEach(dept => {
+      const opt = document.createElement('option');
+      opt.value = dept;
+      opt.textContent = DEPARTMENT_LABELS[dept] || dept;
+      if (dept === preselect) opt.selected = true;
+      departmentSelect.appendChild(opt);
+    });
+    // If a previously selected department no longer belongs to this faculty, drop it.
+    if (preselect && !depts.includes(preselect)) {
+      departmentSelect.value = '';
+    }
+  }
+
+  function populateLevels(faculty, department, preselect) {
+    const relevantDepts = department ? [department] : departmentsForFaculty(faculty);
+    const levels = levelsForDepartments(relevantDepts);
+    levelSelect.innerHTML = '<option value="">All Levels</option>';
+    levels.forEach(level => {
+      const opt = document.createElement('option');
+      opt.value = level;
+      opt.textContent = level + ' Level';
+      if (level === preselect) opt.selected = true;
+      levelSelect.appendChild(opt);
+    });
+    if (preselect && !levels.includes(preselect)) {
+      levelSelect.value = '';
+    }
+  }
+
+  function refreshLevels() {
+    populateLevels(facultySelect.value, departmentSelect.value, '');
+  }
+
+  // Initial build, restoring whatever came in on the query string.
+  populateDepartments(selectedFaculty, selectedDepartment);
+  populateLevels(selectedFaculty, departmentSelect.value, selectedLevel);
+
+  facultySelect.addEventListener('change', function () {
+    populateDepartments(this.value, '');
+    refreshLevels();
+  });
+
+  departmentSelect.addEventListener('change', refreshLevels);
+})();
+</script>
+{% endblock %}

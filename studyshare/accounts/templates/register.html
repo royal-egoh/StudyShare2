@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Your Profile — StudyShare</title>
+  <style>
+    :root {
+      --bg: #1a1e2e;
+      --surface: #232840;
+      --border: #2e3450;
+      --accent: #6b8f8a;
+      --accent-hover: #7da39e;
+      --text: #c8cdd8;
+      --text-muted: #7a8194;
+      --input-bg: #1e2236;
+      --danger: #b45050;
+      --success: #6b8f8a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .messages-container {
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 1rem;
+    }
+    .flash {
+      background: rgba(107, 143, 138, 0.08);
+      border-left: 3px solid var(--success);
+      color: var(--text);
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .flash.error { border-left-color: var(--danger); background: rgba(180, 80, 80, 0.08); }
+
+    .auth-card {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+    }
+
+    .brand { text-align: center; margin-bottom: 1.5rem; }
+    .brand-logo {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .brand-tag {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .form-heading {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+    .form-sub {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="password"],
+    .form-group select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: border-color 0.15s ease;
+      appearance: none;
+    }
+    .form-group select {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%237a8194' d='M6 8L0 0h12z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 0.9rem center;
+      padding-right: 2.2rem;
+      cursor: pointer;
+    }
+    .form-group select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn-submit {
+      display: block;
+      width: 100%;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 0.9rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      margin-top: 0.5rem;
+      transition: background 0.15s ease;
+    }
+    .btn-submit:hover { background: var(--accent-hover); }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 1.75rem 1.25rem; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  {% if messages %}
+  <div class="messages-container">
+    {% for message in messages %}
+    <div class="flash {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">StudyShare</div>
+      <span class="brand-tag">Student Knowledge Hub</span>
+    </div>
+
+    <h1 class="form-heading">Complete your profile</h1>
+    <p class="form-sub">Tell us a bit about your academic profile.</p>
+
+    <form method="POST" action="" id="profileForm">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="faculty">Faculty</label>
+        <select id="faculty" name="faculty" required>
+          <option value="" disabled selected>Select faculty</option>
+          {% for value, label in fac_choices %}
+          {% if value %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="department">Department</label>
+          <select id="department" name="department" disabled required>
+            <option value="" disabled selected>Select Department</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="level">Level</label>
+          <select id="level" name="level" disabled required>
+            <option value="" disabled selected>Select Level</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">Create Account</button>
+    </form>
+  </main>
+
+  <script>
+    const FACULTY_DEPARTMENT_MAP = {
+      'computing': ['computer_science', 'software_engineering'],
+      'engineering': ['mechanical_engineering', 'electrical_engineering'],
+      'arts': ['english', 'music'],
+    };
+
+    const DEPARTMENT_LABELS = {
+      'computer_science': 'Computer Science',
+      'software_engineering': 'Software Engineering',
+      'mechanical_engineering': 'Mechanical Engineering',
+      'electrical_engineering': 'Electrical Engineering',
+      'english': 'English',
+      'music': 'Music',
+    };
+
+    const DEPARTMENT_LEVEL_MAP = {
+      'computer_science': ['100', '200', '300', '400'],
+      'software_engineering': ['100', '200', '300', '400'],
+      'mechanical_engineering': ['100', '200', '300', '400', '500'],
+      'electrical_engineering': ['100', '200', '300', '400', '500'],
+      'english': ['100', '200', '300', '400'],
+      'music': ['100', '200', '300', '400'],
+    };
+
+    const facultySelect = document.getElementById('faculty');
+    const departmentSelect = document.getElementById('department');
+    const levelSelect = document.getElementById('level');
+
+    facultySelect.addEventListener('change', function () {
+      const selectedFaculty = this.value;
+
+      departmentSelect.innerHTML = '<option value="" disabled selected>Select Department</option>';
+      levelSelect.innerHTML = '<option value="" disabled selected>Select Level</option>';
+      departmentSelect.disabled = true;
+      levelSelect.disabled = true;
+
+      if (selectedFaculty && FACULTY_DEPARTMENT_MAP[selectedFaculty]) {
+        FACULTY_DEPARTMENT_MAP[selectedFaculty].forEach(function (dept) {
+          const option = document.createElement('option');
+          option.value = dept;
+          option.text = DEPARTMENT_LABELS[dept];
+          departmentSelect.appendChild(option);
+        });
+        departmentSelect.disabled = false;
+      }
+    });
+
+    departmentSelect.addEventListener('change', function () {
+      const selectedDept = this.value;
+
+      levelSelect.innerHTML = '<option value="" disabled selected>Select Level</option>';
+      levelSelect.disabled = true;
+
+      if (selectedDept && DEPARTMENT_LEVEL_MAP[selectedDept]) {
+        DEPARTMENT_LEVEL_MAP[selectedDept].forEach(function (lvl) {
+          const option = document.createElement('option');
+          option.value = lvl;
+          option.text = lvl + ' Level';
+          levelSelect.appendChild(option);
+        });
+        levelSelect.disabled = false;
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const flashes = document.querySelectorAll('.flash');
+      flashes.forEach(function (flash) {
+        setTimeout(function () {
+          flash.style.transition = "opacity 0.5s";
+          flash.style.opacity = 0;
+          setTimeout(() => flash.remove(), 500);
+        }, 5000);
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,562 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Upload Resource — StudyShare{% endblock %}
+
+{% block extra_head %}
+<style>
+  .upload-container { max-width: 600px; margin: 0 auto; }
+
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 2.5rem 2rem;
+  }
+  .form-card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--text); }
+  .form-card .subtitle { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 2rem; }
+
+  .form-group { margin-bottom: 1.3rem; }
+  .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
+  .form-group label .required { color: var(--danger); margin-left: 2px; }
+
+  .form-group input[type="text"],
+  .form-group input[type="url"],
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
+  .form-group textarea { max-width: 100%; min-height: 80px; max-height: 300px; }
+  .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
+  .form-group select option { background: var(--input-bg); color: var(--text); }
+  .form-group select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .file-drop {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .file-drop:hover, .file-drop.dragover { border-color: var(--accent); background: rgba(107, 143, 138, 0.06); }
+  .file-drop-icon { font-size: 2rem; margin-bottom: 0.5rem; color: var(--text-muted); }
+  .file-drop-text { font-size: 0.88rem; color: var(--text-muted); }
+  .file-drop-text span { color: var(--accent); font-weight: 600; }
+  .file-drop-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.4rem; opacity: 0.7; }
+  .file-drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .file-name { margin-top: 0.6rem; font-size: 0.82rem; color: var(--accent); font-weight: 500; display: none; }
+  .file-name.visible { display: block; }
+
+  .conditional-field { display: none; }
+  .conditional-field.active { display: block; }
+
+  .btn-submit {
+    display: block;
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 1.8rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-submit:hover { background: var(--accent-hover); }
+
+  .back-link {
+    display: inline-block;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.2rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .form-card { padding: 1.8rem 1.2rem; }
+  }
+</style>
+{% endblock %}
+
+
+
+{% block content %}
+<main class="upload-container">
+  <a href="{% url 'browse' %}" class="back-link">← Back to Resources</a>
+
+  <div class="form-card">
+    <h1>Share a Resource</h1>
+    <p class="subtitle">Help your department by uploading something useful</p>
+
+    <form method="POST" action="" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label>Course Code/Title <span class="required">*</span></label>
+        <input
+          type="text"
+          name="title"
+          required
+          placeholder="e.g. MAT 101 Past Questions 2024"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Description <span class="required">*</span></label>
+        <textarea
+          name="description"
+          rows="3"
+          required
+          placeholder="Brief description of this resource"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Faculty <span class="required">*</span></label>
+        <select name="faculty" id="uploadFaculty" required>
+          <option value="" disabled selected>Select faculty</option>
+          <option value="computing">Computing</option>
+          <option value="engineering">Engineering</option>
+          <option value="arts">Arts</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Department <span class="required">*</span></label>
+        <select name="department" id="uploadDepartment" disabled required>
+          <option value="" disabled selected>Select department</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Level <span class="required">*</span></label>
+        <select name="level" id="uploadLevel" disabled required>
+          <option value="" disabled selected>Select level</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Semester <span class="required">*</span></label>
+        <select name="semester" required>
+          <option value="" disabled selected>Select semester</option>
+          <option value="first">First Semester</option>
+          <option value="second">Second Semester</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Resource Type <span class="required">*</span></label>
+        <select name="resource_type" id="resourceType" required>
+          <option value="" disabled selected>Select type</option>
+          <option value="lecture_notes">Lecture Notes</option>
+          <option value="past_questions">Past Questions</option>
+        
+
+          <option value="audio">Audio</option>
+          <option value="external_link">External Link</option>
+        </select>
+      </div>
+
+      <!-- File upload -->
+      <div class="form-group conditional-field" id="fieldFile">
+        <label id="fileLabel">Upload File</label>
+
+        <div class="file-drop" id="fileDrop">
+          <div class="file-drop-icon">&#128206;</div>
+
+          <p class="file-drop-text">
+            <span>Click to upload</span> or drag and drop
+          </p>
+
+          <p class="file-drop-hint" id="fileHint">
+            PDF, Word, images
+          </p>
+
+          <input
+            type="file"
+            name="file"
+            id="fileInput"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+          >
+        </div>
+
+        <p class="file-name" id="fileName"></p>
+      </div>
+
+      <!-- External URL -->
+      <div class="form-group conditional-field" id="fieldLink">
+        <label>External URL</label>
+
+        <input
+          type="url"
+          name="external_link"
+          placeholder="https://example.com/..."
+        >
+      </div>
+
+      <!-- Typed Notes -->
+      <div class="form-group conditional-field" id="fieldBody">
+        <label>Notes Body</label>
+
+        <textarea
+          name="body"
+          rows="6"
+          placeholder="Write your notes here..."
+        ></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        Upload Resource
+      </button>
+
+    </form>
+  </div>
+</main>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+  // ==============================
+  // RESOURCE TYPE
+  // ==============================
+
+  const typeSelect = document.getElementById('resourceType');
+  const fieldFile = document.getElementById('fieldFile');
+  const fieldLink = document.getElementById('fieldLink');
+  const fieldBody = document.getElementById('fieldBody');
+
+  const fileInput = document.getElementById('fileInput');
+  const fileLabel = document.getElementById('fileLabel');
+  const fileHint = document.getElementById('fileHint');
+  const fileNameEl = document.getElementById('fileName');
+  const fileDrop = document.getElementById('fileDrop');
+
+
+  function updateFields() {
+
+    const v = typeSelect.value;
+
+    // Hide everything first
+    fieldFile.classList.remove('active');
+    fieldLink.classList.remove('active');
+    fieldBody.classList.remove('active');
+
+
+    // Lecture notes / Past questions
+    if (v === 'lecture_notes' || v === 'past_questions') {
+
+      fieldFile.classList.add('active');
+
+      fileLabel.textContent = 'Upload File';
+
+      fileHint.textContent = 'PDF, Word, images';
+
+      fileInput.accept =
+        '.pdf,.doc,.docx,.jpg,.jpeg,.png,.webp';
+    }
+
+
+    // Video
+    if (v === 'video') {
+
+      fieldFile.classList.add('active');
+
+      fileLabel.textContent = 'Upload Video';
+
+      fileHint.textContent = 'MP4, AVI, MOV';
+
+      fileInput.accept =
+        '.mp4,.avi,.mov,.mkv';
+    }
+
+
+    // Audio
+    if (v === 'audio') {
+
+      fieldFile.classList.add('active');
+
+      fileLabel.textContent = 'Upload Audio';
+
+      fileHint.textContent = 'MP3, WAV, AAC';
+
+      fileInput.accept =
+        '.mp3,.wav,.aac';
+    }
+
+
+    // External link
+    if (v === 'external_link') {
+
+      fieldLink.classList.add('active');
+    }
+
+
+    // Typed notes
+    if (v === 'typed_notes') {
+
+      fieldBody.classList.add('active');
+    }
+  }
+
+
+  typeSelect.addEventListener('change', updateFields);
+
+  // Run once when page loads
+  updateFields();
+
+
+  // ==============================
+  // FILE SELECTION
+  // ==============================
+
+  fileInput.addEventListener('change', function () {
+
+    if (this.files.length) {
+
+      fileNameEl.textContent =
+        '📎 ' + this.files[0].name;
+
+      fileNameEl.classList.add('visible');
+
+    } else {
+
+      fileNameEl.classList.remove('visible');
+    }
+  });
+
+
+  // ==============================
+  // DRAG AND DROP
+  // ==============================
+
+  fileDrop.addEventListener('dragover', function (e) {
+
+    e.preventDefault();
+
+    this.classList.add('dragover');
+  });
+
+
+  fileDrop.addEventListener('dragleave', function () {
+
+    this.classList.remove('dragover');
+  });
+
+
+  fileDrop.addEventListener('drop', function (e) {
+
+    e.preventDefault();
+
+    this.classList.remove('dragover');
+
+    if (e.dataTransfer.files.length) {
+
+      fileInput.files = e.dataTransfer.files;
+
+      fileInput.dispatchEvent(
+        new Event('change')
+      );
+    }
+  });
+
+
+  // ==============================
+  // FACULTY / DEPARTMENT / LEVEL
+  // ==============================
+
+  const FACULTY_DEPARTMENT_MAP = {
+
+    'computing': [
+      'computer_science',
+      'software_engineering'
+    ],
+
+    'engineering': [
+      'mechanical_engineering',
+      'electrical_engineering'
+    ],
+
+    'arts': [
+      'english',
+      'music'
+    ]
+  };
+
+
+  const DEPARTMENT_LABELS = {
+
+    'computer_science':
+      'Computer Science',
+
+    'software_engineering':
+      'Software Engineering',
+
+    'mechanical_engineering':
+      'Mechanical Engineering',
+
+    'electrical_engineering':
+      'Electrical Engineering',
+
+    'english':
+      'English',
+
+    'music':
+      'Music'
+  };
+
+
+  const DEPARTMENT_LEVEL_MAP = {
+
+    'computer_science': [
+      '100',
+      '200',
+      '300',
+      '400'
+    ],
+
+    'software_engineering': [
+      '100',
+      '200',
+      '300',
+      '400'
+    ],
+
+    'mechanical_engineering': [
+      '100',
+      '200',
+      '300',
+      '400',
+      '500'
+    ],
+
+    'electrical_engineering': [
+      '100',
+      '200',
+      '300',
+      '400',
+      '500'
+    ],
+
+    'english': [
+      '100',
+      '200',
+      '300',
+      '400'
+    ],
+
+    'music': [
+      '100',
+      '200',
+      '300',
+      '400'
+    ]
+  };
+
+
+  const uploadFaculty =
+    document.getElementById('uploadFaculty');
+
+  const uploadDepartment =
+    document.getElementById('uploadDepartment');
+
+  const uploadLevel =
+    document.getElementById('uploadLevel');
+
+
+  // Faculty changed
+  uploadFaculty.addEventListener('change', function () {
+
+    const selected = this.value;
+
+
+    uploadDepartment.innerHTML =
+      '<option value="" disabled selected>Select department</option>';
+
+    uploadLevel.innerHTML =
+      '<option value="" disabled selected>Select level</option>';
+
+
+    uploadDepartment.disabled = true;
+
+    uploadLevel.disabled = true;
+
+
+    if (
+      selected &&
+      FACULTY_DEPARTMENT_MAP[selected]
+    ) {
+
+      FACULTY_DEPARTMENT_MAP[selected].forEach(
+        function (dept) {
+
+          const option =
+            document.createElement('option');
+
+          option.value = dept;
+
+          option.text =
+            DEPARTMENT_LABELS[dept];
+
+          uploadDepartment.appendChild(option);
+        }
+      );
+
+      uploadDepartment.disabled = false;
+    }
+  });
+
+
+  // Department changed
+  uploadDepartment.addEventListener('change', function () {
+
+    const selected = this.value;
+
+
+    uploadLevel.innerHTML =
+      '<option value="" disabled selected>Select level</option>';
+
+    uploadLevel.disabled = true;
+
+
+    if (
+      selected &&
+      DEPARTMENT_LEVEL_MAP[selected]
+    ) {
+
+      DEPARTMENT_LEVEL_MAP[selected].forEach(
+        function (lvl) {
+
+          const option =
+            document.createElement('option');
+
+          option.value = lvl;
+
+          option.text = lvl + ' Level';
+
+          uploadLevel.appendChild(option);
+        }
+      );
+
+      uploadLevel.disabled = false;
+    }
+  });
+
+</script>
+{% endblock %}
