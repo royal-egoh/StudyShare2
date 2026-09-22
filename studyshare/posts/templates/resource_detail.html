@@ -112,10 +112,10 @@
 
     <div class="resource-meta">
       <span class="meta-tag">{{ resource.get_resource_type_display }}</span>
-      <span class="meta-tag">{{ resource.department }}</span>
-      <span class="meta-tag">{{ resource.level }} Level</span>
-      <span class="meta-tag">{{ resource.faculty }}</span>
-      <span class="meta-tag">{{ resource.semester }}</span>
+      <span class="meta-tag">{{ resource.get_department_display }}</span>
+      <span class="meta-tag">{{ resource.get_level_display }} Level</span>
+      <span class="meta-tag">{{ resource.get_faculty_display }}</span>
+      <span class="meta-tag">{{ resource.get_semester_display }}</span>
       <span class="meta-tag">{{ resource.uploaded_at|date:"M d, Y" }}</span>
     </div>
 
